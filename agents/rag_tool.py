@@ -1,6 +1,7 @@
 import os
 import requests
 import logging
+import urllib.parse
 from typing import Dict, Any, List
 
 # Color codes for terminal output
@@ -75,6 +76,42 @@ def _choose_tags_from_text(query: str) -> List[str]:
     # Remove duplicates and return
     return list(set(chosen))
 
+def _generate_citations(rag_response: Dict[str, Any]) -> List[Dict[str, str]]:
+    """
+    Generate citations array from RAG response with downloadable links.
+    """
+    citations = []
+    
+    if not rag_response.get('files'):
+        return citations
+    
+    base_url = RAG_BASE_URL.rstrip('/')
+    
+    for file_info in rag_response['files']:
+        file_name = file_info.get('name', '')
+        if not file_name:
+            continue
+            
+        # Create downloadable URL using the view API
+        encoded_filename = urllib.parse.quote(file_name, safe='')
+        download_url = f"{base_url}/api/v1/files/view?filename={encoded_filename}"
+        
+        citation = {
+            "name": file_name,
+            "url": download_url,
+            "title": file_info.get('title', file_name)
+        }
+        
+        # Add additional metadata if available
+        if file_info.get('tags'):
+            citation['tags'] = file_info['tags']
+        if file_info.get('last_updated'):
+            citation['last_updated'] = file_info['last_updated']
+            
+        citations.append(citation)
+    
+    return citations
+
 def rag_search(query: str) -> Dict[str, Any]:
     """
     Enhanced RAG search with multiple strategies and better logging.
@@ -130,9 +167,13 @@ def rag_search(query: str) -> Dict[str, Any]:
             logger.info(f"Response data: {result}")
             logger.info("=" * 60)
             
-            # If we get results, return them
+            # If we get results, add citations and return them
             if result.get('total_files', 0) > 0 or result.get('total_chunks', 0) > 0:
                 logger.info(f"✅ Found results with strategy {i}")
+                # Generate citations for the response
+                citations = _generate_citations(result)
+                result['citations'] = citations
+                logger.info(f"Generated {len(citations)} citations")
                 return result
             else:
                 logger.info(f"❌ No results with strategy {i}, trying next...")
@@ -148,6 +189,7 @@ def rag_search(query: str) -> Dict[str, Any]:
                 raise
             continue
     
-    # If all strategies failed, return the last result
+    # If all strategies failed, return the last result with empty citations
     logger.warning("All search strategies returned no results")
+    result['citations'] = []
     return result
