@@ -1,0 +1,11 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Local creds & env
+.env
+service-account-key.json
+
+# OS
+.DS_Store
