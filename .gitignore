@@ -9,3 +9,7 @@ service-account-key.json
 
 # OS
 .DS_Store
+
+# Test files
+simple_test_results.json
+deployed_agent_test_results.json

@@ -10,9 +10,16 @@ load_dotenv()
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
 LOCATION   = os.getenv("VERTEX_AI_LOCATION") or os.getenv("GOOGLE_CLOUD_REGION") or "us-central1"
 STAGING    = os.getenv("VERTEX_STAGING_BUCKET")
+
+print(f"Deploying CymbalBot to Google Agent Engine...")
+print(f"Project: {PROJECT_ID}")
+print(f"Location: {LOCATION}")
+print(f"Staging Bucket: {STAGING}")
+
 if not STAGING:
     raise RuntimeError("VERTEX_STAGING_BUCKET is required for deployment (e.g., gs://your-bucket).")
 
+# Initialize Vertex AI with staging bucket
 vertexai.init(project=PROJECT_ID, location=LOCATION, staging_bucket=STAGING)
 
 # Dependencies for the remote runtime (you can also pass a path to requirements.txt)
@@ -39,8 +46,8 @@ remote_agent = agent_engines.create(
     app,
     requirements=requirements,
     extra_packages=extra_packages,
-    display_name="RAG Chat Agent",
-    description="ADK chat agent that calls our RAG REST API with env-driven params.",
+    display_name="CymbalBot - Internal Knowledge Assistant",
+    description="AI-powered internal knowledge assistant for Cymbal company. Helps employees with policies, benefits, IT resources, and onboarding questions.",
     env_vars=env_vars,
     # Optional autoscaling/resources:
     # min_instances=1,

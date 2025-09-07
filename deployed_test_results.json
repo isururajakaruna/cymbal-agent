@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "successful_queries": 5,
+  "total_queries": 5,
+  "citations_working": false,
+  "markdown_formatting": false,
+  "query_results": [
+    {
+      "query": "What are the company benefits?",
+      "status": "success",
+      "response_length": 0,
+      "citations_count": 0
+    },
+    {
+      "query": "How do I enroll in benefits?",
+      "status": "success",
+      "response_length": 0,
+      "citations_count": 0
+    },
+    {
+      "query": "What are the IT policies?",
+      "status": "success",
+      "response_length": 0,
+      "citations_count": 0
+    },
+    {
+      "query": "What is the onboarding process?",
+      "status": "success",
+      "response_length": 0,
+      "citations_count": 0
+    },
+    {
+      "query": "What are the vacation policies?",
+      "status": "success",
+      "response_length": 0,
+      "citations_count": 0
+    }
+  ]
+}
