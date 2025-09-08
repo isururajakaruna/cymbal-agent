@@ -24,6 +24,7 @@ logger.addHandler(handler)
 RAG_BASE_URL    = os.getenv("RAG_BASE_URL", "http://localhost:8000")
 RAG_KTOP        = int(os.getenv("RAG_KTOP", "10"))
 RAG_THRESHOLD   = float(os.getenv("RAG_THRESHOLD", "0.6"))
+API_AUTH_TOKEN  = os.getenv("API_AUTH_TOKEN", "")
 _ALLOWED_TAGS   = [t.strip() for t in os.getenv("RAG_ALLOWED_TAGS", "hr,tech,infra,product,policy,onboarding,benefits,it,security,finance,legal").split(",") if t.strip()]
 _DEFAULT_TAG    = os.getenv("RAG_DEFAULT_TAG", "policy").strip()
 
@@ -116,7 +117,10 @@ def rag_search(query: str) -> Dict[str, Any]:
     """
     Enhanced RAG search with multiple strategies and better logging.
     """
+    # Build URL with authentication token
     url = f"{RAG_BASE_URL}/api/v1/search/rag"
+    if API_AUTH_TOKEN:
+        url += f"?token={API_AUTH_TOKEN}"
     
     # Try multiple search strategies
     search_strategies = [

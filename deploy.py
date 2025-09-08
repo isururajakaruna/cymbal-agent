@@ -40,6 +40,7 @@ env_vars = {
     "RAG_THRESHOLD": os.getenv("RAG_THRESHOLD", "0.7"),
     "RAG_ALLOWED_TAGS": os.getenv("RAG_ALLOWED_TAGS", "hr,tech,infra"),
     "RAG_DEFAULT_TAG": os.getenv("RAG_DEFAULT_TAG", ""),
+    "API_AUTH_TOKEN": os.getenv("API_AUTH_TOKEN", ""),
 }
 
 remote_agent = agent_engines.create(

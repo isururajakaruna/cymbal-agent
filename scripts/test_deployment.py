@@ -12,6 +12,9 @@ import requests
 from typing import Dict, Any, List
 from dotenv import load_dotenv
 
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Load environment variables
 load_dotenv()
 
@@ -287,11 +290,15 @@ def main():
     # Run full test suite
     results = tester.run_full_test_suite()
     
+    # Ensure test_results directory exists
+    os.makedirs("test_results", exist_ok=True)
+    
     # Save results to file
-    with open("test_results.json", "w") as f:
+    results_file = "test_results/test_results.json"
+    with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
     
-    print(f"\n📄 Test results saved to test_results.json")
+    print(f"\n📄 Test results saved to {results_file}")
     
     if results["status"] == "success":
         print("\n🎉 All tests passed! CymbalBot is working correctly.")

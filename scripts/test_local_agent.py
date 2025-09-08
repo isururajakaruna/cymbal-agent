@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Test script for deployed CymbalBot agent.
-This script tests the deployed agent using the Vertex AI Agent Engine API.
+Test script for local CymbalBot agent.
+This script tests the local agent with RAG API authentication.
 """
 
 import os
@@ -11,43 +11,25 @@ import time
 import asyncio
 from typing import Dict, Any, List
 from dotenv import load_dotenv
-import vertexai
-from vertexai import agent_engines
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
 load_dotenv()
 
-class DeployedCymbalBotTester:
-    def __init__(self, agent_resource_name: str = None):
-        """
-        Initialize the tester with the deployed agent resource name.
-        
-        Args:
-            agent_resource_name: The resource name of the deployed agent
-        """
-        if not agent_resource_name:
-            # Use the deployed agent resource name from the deployment
-            agent_resource_name = "projects/630583075057/locations/us-central1/reasoningEngines/5830125221910151168"
-        
-        self.agent_resource_name = agent_resource_name
-        
-        # Initialize Vertex AI
-        PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT_ID")
-        LOCATION = os.getenv("VERTEX_AI_LOCATION") or os.getenv("GOOGLE_CLOUD_REGION") or "us-central1"
-        
-        vertexai.init(project=PROJECT_ID, location=LOCATION)
-        
-        # Get the deployed agent
-        try:
-            self.agent_engine = agent_engines.get(agent_resource_name)
-            print(f"✅ Successfully connected to deployed agent: {agent_resource_name}")
-        except Exception as e:
-            print(f"❌ Failed to connect to deployed agent: {e}")
-            raise
+# Import the local agent
+from agents.agent_core import app
+
+class LocalCymbalBotTester:
+    def __init__(self):
+        """Initialize the tester with the local agent."""
+        self.app = app
+        print("✅ Successfully connected to local CymbalBot agent")
     
     async def send_query(self, query: str, user_id: str = "test_user") -> Dict[str, Any]:
         """
-        Send a query to the deployed agent.
+        Send a query to the local agent.
         
         Args:
             query: The question to ask the agent
@@ -59,15 +41,14 @@ class DeployedCymbalBotTester:
         try:
             print(f"🤖 Sending query: {query}")
             
-            # Use the agent engine to process the query
-            response_stream = self.agent_engine.async_stream_query(
+            # Use the local agent to process the query
+            response_stream = self.app.async_stream_query(
                 user_id=user_id,
                 message=query
             )
             
             # Collect the full response
             full_response = ""
-            citations = []
             
             async for event in response_stream:
                 content = event.get("content", {})
@@ -76,6 +57,7 @@ class DeployedCymbalBotTester:
                         full_response += part["text"]
             
             # Try to extract citations from the response
+            citations = []
             if "Citations:" in full_response:
                 citations_section = full_response.split("Citations:")[-1].strip()
                 if citations_section and citations_section != "None":
@@ -149,7 +131,7 @@ class DeployedCymbalBotTester:
                 })
             
             # Small delay between requests
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
         
         return results
     
@@ -182,6 +164,7 @@ class DeployedCymbalBotTester:
             print(f"\nCitation {i}:")
             print(f"  Name: {citation.get('name', 'N/A')}")
             print(f"  URL: {citation.get('url', 'N/A')}")
+            print(f"  Title: {citation.get('title', 'N/A')}")
             print("  ✅ Citation format looks good")
         
         return True
@@ -222,6 +205,38 @@ class DeployedCymbalBotTester:
             print("❌ Markdown formatting needs improvement")
             return False
     
+    async def test_rag_api_connection(self) -> bool:
+        """
+        Test if the RAG API is accessible and working.
+        
+        Returns:
+            bool: True if RAG API is working, False otherwise
+        """
+        print("\n🔌 Testing RAG API connection...")
+        print("=" * 35)
+        
+        response = await self.send_query("What are the company benefits?")
+        
+        if response.get("status") == "failed":
+            error = response.get("error", "")
+            if "connection" in error.lower() or "timeout" in error.lower() or "refused" in error.lower():
+                print("❌ RAG API connection failed")
+                print(f"Error: {error}")
+                return False
+            else:
+                print("❌ Query failed for other reason")
+                print(f"Error: {error}")
+                return False
+        
+        # Check if we got a meaningful response (not just "I don't know")
+        response_text = response.get("response", "")
+        if "don't know" in response_text.lower() or "no information" in response_text.lower():
+            print("❌ RAG API returned no information")
+            return False
+        
+        print("✅ RAG API connection successful")
+        return True
+    
     async def run_full_test_suite(self) -> Dict[str, Any]:
         """
         Run the complete test suite.
@@ -229,16 +244,23 @@ class DeployedCymbalBotTester:
         Returns:
             Dict containing test results summary
         """
-        print("🚀 Starting CymbalBot Deployed Agent Test Suite")
-        print("=" * 55)
+        print("🚀 Starting CymbalBot Local Agent Test Suite")
+        print("=" * 50)
         
-        # Test 1: Basic queries
+        # Test 1: RAG API connection
+        rag_connection_ok = await self.test_rag_api_connection()
+        
+        if not rag_connection_ok:
+            print("\n⚠️  RAG API connection failed. This might be due to authentication.")
+            print("Continuing with other tests...")
+        
+        # Test 2: Basic queries
         query_results = await self.test_basic_queries()
         
-        # Test 2: Citations
+        # Test 3: Citations
         citations_ok = await self.test_citations()
         
-        # Test 3: Markdown formatting
+        # Test 4: Markdown formatting
         formatting_ok = await self.test_markdown_formatting()
         
         # Summary
@@ -247,6 +269,7 @@ class DeployedCymbalBotTester:
         
         print("\n📊 Test Summary")
         print("=" * 20)
+        print(f"RAG API Connection: {'✅' if rag_connection_ok else '❌'}")
         print(f"Successful Queries: {successful_queries}/{total_queries}")
         print(f"Citations Working: {'✅' if citations_ok else '❌'}")
         print(f"Markdown Formatting: {'✅' if formatting_ok else '❌'}")
@@ -255,6 +278,7 @@ class DeployedCymbalBotTester:
         
         return {
             "status": "success" if overall_success else "failed",
+            "rag_connection": rag_connection_ok,
             "successful_queries": successful_queries,
             "total_queries": total_queries,
             "citations_working": citations_ok,
@@ -264,29 +288,30 @@ class DeployedCymbalBotTester:
 
 async def main():
     """Main function to run the test suite."""
-    if len(sys.argv) > 1:
-        agent_resource_name = sys.argv[1]
-    else:
-        agent_resource_name = None
-    
     try:
         # Create tester instance
-        tester = DeployedCymbalBotTester(agent_resource_name)
+        tester = LocalCymbalBotTester()
         
         # Run full test suite
         results = await tester.run_full_test_suite()
         
+        # Ensure test_results directory exists
+        os.makedirs("test_results", exist_ok=True)
+        
         # Save results to file
-        with open("deployed_test_results.json", "w") as f:
+        results_file = "test_results/local_test_results.json"
+        with open(results_file, "w") as f:
             json.dump(results, f, indent=2)
         
-        print(f"\n📄 Test results saved to deployed_test_results.json")
+        print(f"\n📄 Test results saved to {results_file}")
         
         if results["status"] == "success":
-            print("\n🎉 All tests passed! CymbalBot is working correctly in production.")
+            print("\n🎉 All tests passed! Local CymbalBot is working correctly.")
             sys.exit(0)
         else:
             print("\n❌ Some tests failed. Check the results above.")
+            if not results["rag_connection"]:
+                print("💡 RAG API connection failed - check authentication setup.")
             sys.exit(1)
             
     except Exception as e:

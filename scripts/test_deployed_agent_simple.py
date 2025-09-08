@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 import vertexai
 from vertexai import agent_engines
 
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 # Load environment variables
 load_dotenv()
 
@@ -259,11 +262,15 @@ async def main():
         # Run simple test suite
         results = await tester.run_simple_test_suite()
         
+        # Ensure test_results directory exists
+        os.makedirs("test_results", exist_ok=True)
+        
         # Save results to file
-        with open("simple_test_results.json", "w") as f:
+        results_file = "test_results/simple_test_results.json"
+        with open(results_file, "w") as f:
             json.dump(results, f, indent=2)
         
-        print(f"\n📄 Test results saved to simple_test_results.json")
+        print(f"\n📄 Test results saved to {results_file}")
         
         if results["status"] == "success":
             print("\n🎉 Basic tests passed! CymbalBot is responding correctly.")

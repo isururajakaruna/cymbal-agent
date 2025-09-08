@@ -1,0 +1,22 @@
+{
+  "agent_resource_name": "projects/YOUR_PROJECT_ID/locations/us-central1/reasoningEngines/YOUR_AGENT_ID",
+  "project_id": "your-gcp-project-id",
+  "location": "us-central1",
+  "display_name": "CymbalBot - Internal Knowledge Assistant",
+  "description": "AI-powered internal knowledge assistant for Cymbal company. Helps employees with policies, benefits, IT resources, and onboarding questions.",
+  "deployment_status": "not_deployed",
+  "last_updated": "",
+  "rag_api": {
+    "base_url": "http://your-rag-api-url:8000",
+    "requires_auth": true,
+    "auth_method": "token_parameter"
+  },
+  "environment_variables": {
+    "VERTEX_AI_MODEL_NAME": "gemini-2.5-flash",
+    "RAG_BASE_URL": "http://your-rag-api-url:8000",
+    "RAG_KTOP": "10",
+    "RAG_THRESHOLD": "0.6",
+    "RAG_ALLOWED_TAGS": "hr,tech,infra,product,policy,onboarding,benefits,it,security,finance,legal",
+    "RAG_DEFAULT_TAG": "policy"
+  }
+}

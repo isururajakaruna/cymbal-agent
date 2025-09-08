@@ -11,5 +11,7 @@ service-account-key.json
 .DS_Store
 
 # Test files
-simple_test_results.json
-deployed_agent_test_results.json
+test_results/
+
+# Config files (use templates instead)
+config/agent_engine.json
